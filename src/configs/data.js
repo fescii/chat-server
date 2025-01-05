@@ -1,13 +1,17 @@
-// use env variables for production
-require('dotenv').config();
-
 // mongo db connection
 module.exports = {
-	uri: process.env.MONGO_URI,
-	options: {
-		useNewUrlParser: true,
-		useUnifiedTopology: true,
-		useCreateIndex: true,
-		useFindAndModify: false
+	mongo: {
+		uri: process.env.MONGO_URI,
+		options: {
+			autoIndex: true,
+			autoCreate: false,
+			maxPoolSize: 10,
+			minPoolSize: 5,
+		}
+	},
+	redis: {
+		host: process.env.REDIS_HOST,
+		port: process.env.REDIS_PORT,
+		uri: process.env.REDIS_URI,
 	}
 }

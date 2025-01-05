@@ -12,14 +12,20 @@ const mongoose = require('mongoose');
 	@field {Date} joinedAt The join date of the participant
 */
 const participant = new mongoose.Schema({
-	type: String,
 	status: { type: String, enum: ['active', 'inactive', 'suspended', 'blocked'], default: 'active' },
-	enum: ['user', 'group'], required: true ,
+	kind: { type: String, enum: ['user', 'group'], required: true },
 	user: { type: String, ref: 'User' },
 	online: { type: Boolean, default: false },
-	group: { type: String, ref: 'Group' },
+	group: { type: String, ref: 'Group', default: null },
 	role: { type: String, enum: ['admin', 'moderator', 'member'], required: true , default: 'member' },
-	joinedAt: { type: Date, default: Date.now }
+	joinedAt: { type: Date, default: Date.now },
+	updateAt: { type: Date, default: Date.now }
+});
+
+// Middleware to update the `updatedAt` timestamp on modification
+participant.pre('save', function (next) {
+	this.updatedAt = Date.now();
+	next();
 });
 
 /*
@@ -33,14 +39,21 @@ const participant = new mongoose.Schema({
 	@field {Date} createdAt The creation date of the conversation
 	@field {Date} updatedAt The last update date of the conversation
 */
-const conversationSchema = new mongoose.Schema({
-	hex: { type: String, required: true },
+const conversationSchema =  new mongoose.Schema({
+	hex: { type: String, required: true, unique: true },
 	participants: { type: [participant], required: true },
+	kind: { type: String, enum: ['user', 'group'], required: true },
 	last: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },
 	unread: { type: Number, default: 0 },
 	total: { type: Number, default: 0 },
 	createdAt: { type: Date, default: Date.now },
 	updatedAt: { type: Date, default: Date.now }
+});
+
+// Middleware to update the `updatedAt` timestamp on modification
+conversationSchema.pre('save', function (next) {
+	this.updatedAt = Date.now();
+	next();
 });
 
 
@@ -68,3 +81,7 @@ conversationSchema.virtual('messagesCount', {
 	foreignField: 'conversation',
 	count: true
 });
+
+
+//export the model
+module.exports = conversationSchema;

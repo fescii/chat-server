@@ -60,6 +60,14 @@ const messageSchema = new mongoose.Schema({
 	videos: { type: [String], default: [] },
 	reactions: { type: [reactions], default: [] },
 	audio: { type: String, default: null },
+	createdAt: { type: Date, default: Date.now },
+	updateAt: { type: Date, default: Date.now }
+});
+
+// Middleware to update the `updatedAt, createdAt` timestamp on modification
+messageSchema.pre('save', function (next) {
+	this.updatedAt = Date.now();
+	next();
 });
 
 /*
@@ -87,5 +95,4 @@ messageSchema.virtual('repliesCount', {
 	count: true
 });
 
-// Export Message model
-module.exports = mongoose.model('Message', messageSchema);
+module.exports = messageSchema;

@@ -8,7 +8,7 @@ module.exports = {
 	security: {
 		salt: process.env.AUTH_SALT,
 		jwtSecret: process.env.JWT_SECRET,
-		jwtExpiry: process.env.JWT_EXPIRY,
-		refreshExpiry: process.env.REFRESH_EXPIRY,
+		jwtExpiry: process.env.JWT_EXPIRES_IN,
+		refreshExpiry: process.env.JWT_REFRESH_EXPIRES_IN,
 	},
 }
