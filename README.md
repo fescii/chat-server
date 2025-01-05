@@ -16,9 +16,9 @@ ChatBloom is a real-time chat server designed to enable secure, scalable, and fe
 ```
 chat-server/
 ├── configs/                # Configuration files
-│   ├── database.js        # MongoDB connection configuration
+│   ├── data.js        # MongoDB connection configuration
 │   ├── websocket.js       # WebSocket server configuration
-│   ├── encryption.js      # Encryption-related configuration
+│   ├── app.js      # Encryption-related configuration
 │   └── environment.js     # Environment variables loader
 ├── data/                   # Database-related files
 │   ├── seed/              # Data seeding scripts
