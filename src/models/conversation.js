@@ -14,7 +14,7 @@ const mongoose = require('mongoose');
 const participant = new mongoose.Schema({
 	status: { type: String, enum: ['active', 'inactive', 'suspended', 'blocked'], default: 'active' },
 	kind: { type: String, enum: ['user', 'group'], required: true },
-	user: { type: String, ref: 'User' },
+	user: { type: String, required: true },
 	online: { type: Boolean, default: false },
 	group: { type: String, ref: 'Group', default: null },
 	role: { type: String, enum: ['admin', 'moderator', 'member'], required: true , default: 'member' },

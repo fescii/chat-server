@@ -27,15 +27,16 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 	idleTimeout: 960,
 	
 	upgrade: async (res, req, context) => {
+		const cookies = req.getHeader('cookie');
 		try {
 			// Use the authorization middleware
-			const user = await authorize(req);
+			const user = await authorize(cookies);
 			
-			if (!user) {
-				// console.log('Request:', req)
-				res.writeStatus('401 Unauthorized')
-				res.end();
-				return;
+			if (!user || res.done) {
+				res.cork(() => {
+					res.writeStatus('401 Unauthorized');
+					res.end();
+				});
 			}
 			
 			// Pass user data to the WebSocket
@@ -48,8 +49,10 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 			);
 		} catch (error) {
 			console.error('Upgrade error:', error);
-			res.writeStatus('500 Internal Server Error')
-			res.end();
+			res.cork(() => {
+				res.writeStatus('500 Internal Server Error');
+				res.end();
+			});
 		}
 	},
 	
@@ -59,7 +62,7 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 	},
 		
 	message: async (ws, message, isBinary) => {
-		console.log('A WebSocket message received');
+		console.log('A WebSocket message received', message.toString());
 	},
 		
 	drain: (ws) => {
@@ -91,15 +94,29 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 		idleTimeout: 960,
 		
 		upgrade: async (res, req, context) => {
+			// Capture all required data synchronously
+			const headers = {
+				cookies: req.getHeader('cookie'),
+				secWebSocketKey: req.getHeader('sec-websocket-key'),
+				secWebSocketProtocol: req.getHeader('sec-websocket-protocol'),
+				secWebSocketExtensions: req.getHeader('sec-websocket-extensions')
+			};
+			
+			// Handle aborted requests
+			res.onAborted(() => {
+				res.done = true;
+			});
+			
 			try {
-				console.log('Conversation handler reached!')
+				// console.log('Conversation handler reached!')
 				// Use the authorization middleware
-				const user = await authorize(req);
+				const user = await authorize(headers.cookies);
 				
-				console.log('User is processed!', user)
-				if (!user) {
-					res.writeStatus('401 Unauthorized')
-					res.end();
+				if (!user || res.done) {
+					res.cork(() => {
+						res.writeStatus('401 Unauthorized');
+						res.end();
+					});
 					return;
 				}
 				
@@ -107,32 +124,36 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 				console.log('Hex is:', hex)
 				const conversation = await checkConversation({ user: user.hex, hex: hex });
 				
-				console.log('Conversation is fetched:', conversation);
-				if (!conversation) {
-					console.error('Reached')
-					res.writeStatus('401 Unauthorized')
-					res.end();
+				// console.log('Conversation is fetched:', conversation);
+				if (!conversation || res.done) {
+					res.cork(() => {
+						res.writeStatus('404 Not Found');
+						res.end();
+					});
 					return;
 				}
 				
 				res.upgrade(
 					{ user: user, conversation: { hex: hex, participants: conversation.participants } },
-					req.getHeader('sec-websocket-key'),
-					req.getHeader('sec-websocket-protocol'),
-					req.getHeader('sec-websocket-extensions'),
+					headers.secWebSocketKey,
+					headers.secWebSocketProtocol,
+					headers.secWebSocketExtensions,
 					context
 				);
 			} catch (error) {
 				console.error('Upgrade error:', error);
-				res.writeStatus('500 Internal Server Error')
-				res.end();
+				res.cork(() => {
+					res.writeStatus('500 Internal Server Error');
+					res.end();
+				});
 			}
 		},
 		
 		open: (ws) => {
 			try {
-				const { hex } = ws.conversation;
+				const { hex, participants } = ws.conversation;
 				console.log(`WebSocket connected for conversation: ${hex}`);
+				// console.log('Participants:', participants);
 				ws.subscribe(`/chat/${hex}`);
 			} catch (error) {
 				console.error('Open handler error:', error);
@@ -142,7 +163,9 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 		message: (ws, message, isBinary) => {
 			try {
 				const { hex } = ws.conversation;
-				console.log(`Message for conversation ${hex}:`, message.toString());
+				// convert a message from ArrayBuffer to string
+				message = Buffer.from(message).toString();
+				console.log(`Message for conversation ${hex}:`, message);
 				ws.publish(`/chat/${hex}`, message, isBinary);
 			} catch (error) {
 				console.error('Message handling error:', error);

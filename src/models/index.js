@@ -61,7 +61,7 @@ const conversation1 = new Conversation({
 		{
 			kind: 'user',
 			status: 'active',
-			user: user1,
+			user: 'U0HAB65ABC3',
 			online: false,
 			group: null,
 			role: 'member',
@@ -70,7 +70,7 @@ const conversation1 = new Conversation({
 		{
 			kind: 'user',
 			status: 'active',
-			user: user2,
+			user: 'U0HAB65ABD3',
 			online: false,
 			group: null,
 			role: 'member',

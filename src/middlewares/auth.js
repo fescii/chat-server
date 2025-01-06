@@ -3,8 +3,7 @@ const { tokenUtils: { validateToken } } = require('../utils');
 const { User, Conversation } = require('../models');
 
 // Validate and return decoded token details
-const authorize = async req => {
-	const cookies = req.getHeader('cookie');
+const authorize = async cookies => {
 	// console.log('Cookies', cookies)
 	const token = cookies
 		?.split('; ')
@@ -31,24 +30,27 @@ const authorize = async req => {
 }
 
 checkConversation = async ({hex, user}) => {
-	console.log('Hex', hex, 'User', user)
+	// console.log('Hex', hex, 'User', user)
 	if (!hex) {
 		console.error('Conversation hex missing');
 		return null;
 	}
 	
 	try {
-		console.log('Before Fetched data')
-		const conversation = Conversation.findOne({ hex }).exec()
-		await Promise.resolve(conversation)
-		console.log('Fetched data', conversation)
+		// console.log('Before Fetched data')
+		// Use await here directly with exec()
+		const conversation = await Conversation.findOne({ hex }).exec();
+		// console.log('Fetched data', conversation)
+		
 		if (!conversation) {
 			console.log('Conversation not found for hex:', hex);
 			return null;
 		}
 		
 		// Check if the user is a participant in the conversation
-		const member = conversation.participants.find(participant => participant.user.toString() === user);
+		const member = conversation.participants.find(participant =>
+			participant.user.toString() === user
+		);
 		
 		if (!member) {
 			console.log(`User ${user} is not a participant in conversation with hex: ${hex}`);
