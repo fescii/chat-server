@@ -1,4 +1,4 @@
-// auth: validate and return decoded token details
+// encryption: validate and return decoded token details
 const { tokenUtils: { validateToken } } = require('../utils');
 const { User, Conversation } = require('../models');
 

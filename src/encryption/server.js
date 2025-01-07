@@ -1,9 +1,11 @@
 const sodium = require('libsodium-wrappers');
 const mongoose = require('mongoose');
+const { User, Conversation, Message } = require('../models');
 
 class CryptoServer {
-	constructor() {
+	async constructor() {
 		this.initialized = false;
+		await this.init();
 	}
 	
 	async init() {
@@ -13,10 +15,11 @@ class CryptoServer {
 		}
 	}
 	
-	async generateHex(length = 16) {
+	async generateHex(length = 20) {
 		await this.init();
 		const randomBytes = sodium.randombytes_buf(length);
-		return sodium.to_hex(randomBytes);
+		// return first 20hex
+		return sodium.to_hex(randomBytes).substring(0, length);
 	}
 	
 	async validateKeyPair(publicKey, encryptedPrivateKey) {
@@ -37,11 +40,11 @@ class CryptoServer {
 			throw new Error('Invalid public key format');
 		}
 		
-		const { email, name, publicKey, encryptedPrivateKey, privateKeyNonce,
+		const { hex, email, name, publicKey, encryptedPrivateKey, privateKeyNonce,
 			passcodeSalt, recoveryPhraseEncrypted, recoveryPhraseNonce } = userData;
 		
-		const user = new mongoose.model('User', userSchema)({
-			hex: await this.generateHex(),
+		const user = new User({
+			hex,
 			email,
 			name,
 			publicKey,
@@ -58,15 +61,18 @@ class CryptoServer {
 	async createConversation(participants) {
 		await this.init();
 		
-		const conversation = new mongoose.model('Conversation', conversationSchema)({
+		const conversation = new Conversation({
 			hex: await this.generateHex(),
-			participants: participants.map(p => ({
+			participants: participants.map(participant => ({
 				kind: 'user',
-				user: p.hex,
-				role: p.role || 'member'
-			})),
-			kind: participants.length === 2 ? 'user' : 'group'
-		});
+				status: 'active',
+				user: participant,
+				online: false,
+				group: null,
+				role: 'member',
+				joinedAt: new Date()
+			})
+		)});
 		
 		return await conversation.save();
 	}
@@ -89,12 +95,11 @@ class CryptoServer {
 			throw new Error('Invalid encrypted message format');
 		}
 		
-		const message = new mongoose.model('Message')({
-			hex: await this.generateHex(),
+		const message = new Message({
 			conversation: conversationHex,
 			user: senderHex,
-			encrypted: encryptedData.encrypted,
-			nonce: encryptedData.nonce
+			encryptedData,
+			createdAt: new Date()
 		});
 		
 		const savedMessage = await message.save();
@@ -132,7 +137,7 @@ class CryptoServer {
 			throw new Error('User not found');
 		}
 		
-		return user.publicKey;
+		return user["publicKey"];
 	}
 	
 	// Utility method to verify hex strings
