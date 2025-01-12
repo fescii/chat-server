@@ -151,4 +151,4 @@ class CryptoServer {
 	}
 }
 
-module.exports = CryptoServer;
+module.exports = new CryptoServer();

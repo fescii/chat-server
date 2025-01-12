@@ -1,12 +1,12 @@
 const {
-	app, security
+	app, security, chat
 } = require('./app');
 const {
 	mongo, redis
 } = require('./data');
 
 module.exports = {
-	app,
+	app, chat,
 	security,
 	mongo,
 	redis

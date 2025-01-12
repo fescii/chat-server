@@ -55,7 +55,7 @@ chat-server/
 ├── services/               # Core services
 │   ├── notificationService.js # Handles notifications
 │   ├── onlineStatusService.js # Tracks online/offline status
-│   ├── messageService.js  # Handles message-specific logic
+│   ├── conversation.js  # Handles message-specific logic
 │   └── websocketService.js # Manages WebSocket connections
 ├── utils/                  # Utility functions
 │   ├── logger.js          # Logging utility

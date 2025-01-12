@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const { mongo, app: { host, port} } = require('./configs');
 const { authorize, checkConversation } = require("./middlewares").authMiddleware;
+const services = require('./services');
 
 // Connect to the MongoDB database
 mongoose.connect(mongo.uri, mongo.options).then(r => {
@@ -86,6 +87,9 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 			console.error(`Failed to listen to port ${port}`);
 		}
 	});
+
+	// Register all the servers
+	services(app, '/api/v1');
 
 	// WebSocket for specific conversations
 	app.ws('/chat/:hex', {

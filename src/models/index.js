@@ -77,7 +77,7 @@ const conversation1 = new Conversation({
 			joinedAt: new Date()
 		}
 	],
-	kind: 'user',
+	kind: 'trusted',
 	last: null,
 	unread: 0,
 	total: 0,
