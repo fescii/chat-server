@@ -1,4 +1,4 @@
-const sodium = require('sodium');
+const sodium = require('./sodium');
 
 // export the sodium object
 module.exports = {

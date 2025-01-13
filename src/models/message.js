@@ -36,7 +36,8 @@ const reactions = new mongoose.Schema({
 	@field {String} type The type of message
 	@field {String} parent The parent message
 	@field {String} user The user that sent the message
-	@field {String} encryptedContent The encrypted content of the message
+	@field {String} senderContent The content of the message for the sender
+	@field {String} recipientContent The content of the message for the recipient
 	@field {Date} timestamp The timestamp of the message
 	@field {String} status The status of the message
 	@field {Array<Attachment>} attachments The attachments of the message
@@ -52,7 +53,16 @@ const messageSchema = new mongoose.Schema({
 	type: { type: String, enum: ['all', 'audio'], default: 'all' },
 	parent: { type: String, ref: 'Message', default: null, },
 	user: { type: String, ref: 'User', required: true },
-	encryptedContent: { type: String, required: true },
+	// Encrypted content for the recipient
+	recipientContent: {
+		encrypted: { type: String, required: true },
+		nonce: { type: String, required: true }
+	},
+	// Encrypted content for sender
+	senderContent: {
+		encrypted: { type: String, required: true },
+		nonce: { type: String, required: true }
+	},
 	timestamp: { type: Date, default: Date.now },
 	status: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' },
 	attachments: { type: [attachment], default: [] },
