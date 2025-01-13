@@ -2,7 +2,7 @@
 const UserSchema = require('./user');
 const SettingsSchema = require('./settings');
 const ConversationSchema = require('./conversation');
-const MessageSchema = require('./chat');
+const MessageSchema = require('./message');
 const mongoose = require("mongoose");
 
 const { tokenUtils: { generateToken } } = require('../utils');

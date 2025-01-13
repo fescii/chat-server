@@ -1,11 +1,11 @@
 const sodium = require('libsodium-wrappers');
 const mongoose = require('mongoose');
-const { User, Conversation, Message } = require('../models');
+const { User, Message } = require('../models');
 
 class CryptoServer {
-	async constructor() {
+	 constructor() {
 		this.initialized = false;
-		await this.init();
+		this.init().then(r => console.log('Sodium initialized')).catch(e => console.error('Sodium initialization failed:', e));
 	}
 	
 	async init() {
@@ -56,25 +56,6 @@ class CryptoServer {
 		});
 		
 		return await user.save();
-	}
-	
-	async createConversation(participants) {
-		await this.init();
-		
-		const conversation = new Conversation({
-			hex: await this.generateHex(),
-			participants: participants.map(participant => ({
-				kind: 'user',
-				status: 'active',
-				user: participant,
-				online: false,
-				group: null,
-				role: 'member',
-				joinedAt: new Date()
-			})
-		)});
-		
-		return await conversation.save();
 	}
 	
 	async validateEncryptedMessage(encryptedData) {

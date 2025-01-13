@@ -31,7 +31,7 @@ chat-server/
 │   └── keyExchange.js     # Key exchange protocols
 ├── models/                 # MongoDB models
 │   ├── user.js            # User model
-│   ├── chat.js            # Chat metadata model
+│   ├── message.js            # Chat metadata model
 │   └── conversation.js         # Individual message model
 ├── chats/                  # Chat-related logic
 │   ├── chatController.js  # Controller for chat APIs

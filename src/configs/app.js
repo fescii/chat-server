@@ -29,5 +29,6 @@ module.exports = {
 		perPage: convertToNumber(process.env.CHAT_PER_PAGE, 10),
 		history: convertToNumber(process.env.CHAT_HISTORY, 20),
 		maxPins: convertToNumber(process.env.CHAT_MAX_PINS, 5),
+		messagesLimit: convertToNumber(process.env.MESSAGE_LIMIT, 100),
 	}
 }

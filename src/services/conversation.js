@@ -1,7 +1,7 @@
 const { Conversation} = require('../models');
 const { sodium } = require('../encryption');
-const { tokenUtils: { validateToken }} = require('../utils');
 const { chat: { maxPins, perPage }} = require('../configs')
+const BaseService = require('./base');
 
 /*
 	@name ConversationService
@@ -10,10 +10,9 @@ const { chat: { maxPins, perPage }} = require('../configs')
 	@method {constructor} The class constructor
 	@method {create} Creates a new conversation
 */
-class ConversationService {
+class ConversationService extends BaseService {
 	constructor(app, api) {
-		this.app = app;
-		this.api = api;
+		super(app, api);
 		this.registerRoutes();
 	}
 	
@@ -41,140 +40,21 @@ class ConversationService {
 	 */
 	registerRoutes() {
 		const routes = [
-			{ method: 'post', url: `${this.api}/chat/create`, handler: this.create.bind(this) },
-			{ method: 'get', url: `${this.api}/chat/all`, handler: this.all.bind(this) },
-			{ method: 'get', url: `${this.api}/chat/requested`, handler: this.requested.bind(this) },
-			{ method: 'get', url: `${this.api}/chat/trusted`, handler: this.trusted.bind(this) },
-			{ method: 'get', url: `${this.api}/chat/unread`, handler: this.unread.bind(this) },
-			{ method: 'post', url: `${this.api}/chat/chat`, handler: this.chat.bind(this) },
-			{ method: 'get', url: `${this.api}/chat/pins`, handler: this.pins.bind(this) },
-			{ method: 'post', url: `${this.api}/chat/:hex/pin`, handler: this.pin.bind(this) },
-			{ method: 'post', url: `${this.api}/chat/:hex/unpin`, handler: this.unpin.bind(this) },
-			{ method: 'get', url: `${this.api}/chat/stats`, handler: this.stats.bind(this) },
+			{ method: 'post', url: `${this.api}/conversation/add`, handler: this.create.bind(this) },
+			{ method: 'get', url: `${this.api}/conversations/all`, handler: this.all.bind(this) },
+			{ method: 'get', url: `${this.api}/conversations/requested`, handler: this.requested.bind(this) },
+			{ method: 'get', url: `${this.api}/conversations/trusted`, handler: this.trusted.bind(this) },
+			{ method: 'get', url: `${this.api}/conversations/unread`, handler: this.unread.bind(this) },
+			{ method: 'post', url: `${this.api}/conversation/one`, handler: this.chat.bind(this) },
+			{ method: 'get', url: `${this.api}/conversations/pins`, handler: this.pins.bind(this) },
+			{ method: 'post', url: `${this.api}/conversation/:hex/pin`, handler: this.pin.bind(this) },
+			{ method: 'post', url: `${this.api}/conversation/:hex/unpin`, handler: this.unpin.bind(this) },
+			{ method: 'get', url: `${this.api}/conversations/stats`, handler: this.stats.bind(this) },
 		];
 		
 		routes.forEach((route) => {
 			this.registerRoute(route.method, route.url, route.handler);
 		});
-	}
-	
-	/**
-	 * @name registerRoute
-	 * @description Registers a single route and applies the middleware
-	 * @type {method}
-	 * @param {string} method HTTP method
-	 * @param {string} url Route URL
-	 * @param {function} handler Route handler
-	 */
-	registerRoute(method, url, handler) {
-		this.app[method](url, (res, req) => {
-			let jsonString = '';
-			res.onData((chunk, isLast) => {
-				jsonString += Buffer.from(chunk).toString();
-				if (isLast) {
-					try {
-						const body = jsonString ? JSON.parse(jsonString) : {};
-						const enhancedReq = {
-							...req,
-							body,
-							getHeader: (header) => req.getHeader(header.toLowerCase()),
-						};
-						
-						// Call middleware before the handler
-						this.middleware(enhancedReq, res, () => handler({ req: enhancedReq, res }));
-					} catch (err) {
-						console.error('Error parsing JSON or handling middleware:', err);
-						res.writeStatus('400 Bad Request')
-							.writeHeader('Content-Type', 'application/json')
-							.end(JSON.stringify({ error: 'Invalid request', success: false }));
-					}
-				}
-			});
-		});
-	}
-	
-	/**
-	 * @name middleware
-	 * @description Middleware to decode JWT and attach user to the request
-	 * @type {method}
-	 * @param {object} req Enhanced request object
-	 * @param {object} res Response object
-	 * @param {function} next Callback to proceed to the next handler
-	 */
-	async middleware(req, res, next) {
-		// get token from a cookie
-		const token = req.getHeader('cookie')
-			?.split('; ')
-			?.find(cookie => cookie.startsWith('x-access-token='))
-			?.split('=')[1];
-		if (!token) {
-			res.writeStatus('401 Unauthorized')
-				.writeHeader('Content-Type', 'application/json')
-				.end(JSON.stringify({error: 'Missing or invalid Authorization header', success: false}));
-			return;
-		}
-		
-		try {
-			const {
-				user,
-				error
-			} = await validateToken(token);
-			
-			// if error or no user found
-			if(error || !user) {
-				res.writeStatus('401 Unauthorized')
-					.writeHeader('Content-Type', 'application/json')
-					.end(JSON.stringify({error: 'Invalid token', success: false}));
-				return;
-			}
-			
-			req.user = user; // Attach user to the request object
-			next(); // Proceed to the route handler
-		} catch (err) {
-			console.error('JWT verification failed:', err);
-			res.writeStatus('401 Unauthorized')
-				.writeHeader('Content-Type', 'application/json')
-				.end(JSON.stringify({error: 'Invalid token', success: false}));
-		}
-	}
-	
-	/**
-	 * @name jsonResponse
-	 * @description Sends a JSON response
-	 * @type {method}
-	 * @param {object} res uWebSockets.js response object
-	 * @param {number} status HTTP status code
-	 * @param {object} data JSON data to send
-	 */
-	jsonResponse(res, status, data) {
-		res.writeStatus(`${status} ${this.getStatusText(status)}`)
-			.writeHeader('Content-Type', 'application/json')
-			.end(JSON.stringify(data));
-	}
-	
-	/**
-	 * @name getStatusText
-	 * @description Converts HTTP status codes to standard status texts
-	 * @type {method}
-	 * @param {number} status HTTP status code
-	 * @returns {string} HTTP status text
-	 */
-	getStatusText(status) {
-		const statuses = {
-			200: 'OK',
-			201: 'Created',
-			209: 'Content',
-			300: 'Multiple Choices',
-			301: 'Moved Permanently',
-			400: 'Bad Request',
-			401: 'Unauthorized',
-			404: 'Not Found',
-			409: 'Conflict',
-			500: 'Internal Server Error',
-			501: 'Not Implemented',
-			502: 'Bad Gateway',
-		};
-		return statuses[status] || 'Unknown';
 	}
 	
 	/*
