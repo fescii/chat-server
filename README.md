@@ -1,4 +1,4 @@
-# ChatBloom Real-Time Chat Server
+****# ChatBloom Real-Time Chat Server
 
 ## Overview
 ChatBloom is a real-time chat server designed to enable secure, scalable, and feature-rich communication. Built with **uWebSockets.js** and **MongoDB**, this server facilitates end-to-end encrypted messaging, real-time updates, and seamless integration with WebSocket technology.
@@ -96,12 +96,32 @@ npm install
 ### Configure Environment Variables
 Create a `.env` file in the root directory and add the following:
 ```env
-PORT=9000
-MONGO_URI=mongodb://localhost:27017/chatbloom
+# APP CONFIG
+APP_PORT=3001
+APP_HOST=localhost
+APP_URL=http://localhost:3001
+APP_NAME=ChatApp
+APP_ENV=development
+
+# MONGODB CONFIG
+MONGO_URI=mongo_uri
+MONGO_DB=mongo_database_name
+
+# REDIS CONFIG
 REDIS_HOST=localhost
 REDIS_PORT=6379
-JWT_SECRET=your_jwt_secret
-ENCRYPTION_KEY=your_encryption_key
+REDIS_URI=redis://localhost:6379
+
+# SECURITY CONFIG
+JWT_SECRET=your_secret_key
+JWT_EXPIRES_IN=your_expiry_time
+JWT_REFRESH_EXPIRES_IN=jwt_refresh_expiry_time
+AUTH_SALT=10
+
+# CHAT CONFIG
+CHAT_HISTORY_LIMIT=50
+CHAT_PIN_LIMIT=8
+MESSAGE_LIMIT=15
 ```
 
 ### Run the Server
