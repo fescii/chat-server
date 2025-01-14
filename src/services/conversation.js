@@ -40,16 +40,17 @@ class ConversationService extends BaseService {
 	 */
 	registerRoutes() {
 		const routes = [
-			{ method: 'post', url: `${this.api}/conversation/add`, handler: this.create.bind(this) },
+			{ method: 'put', url: `${this.api}/conversation/add`, handler: this.create.bind(this) },
 			{ method: 'get', url: `${this.api}/conversations/all`, handler: this.all.bind(this) },
 			{ method: 'get', url: `${this.api}/conversations/requested`, handler: this.requested.bind(this) },
 			{ method: 'get', url: `${this.api}/conversations/trusted`, handler: this.trusted.bind(this) },
 			{ method: 'get', url: `${this.api}/conversations/unread`, handler: this.unread.bind(this) },
 			{ method: 'post', url: `${this.api}/conversation/one`, handler: this.chat.bind(this) },
 			{ method: 'get', url: `${this.api}/conversations/pins`, handler: this.pins.bind(this) },
-			{ method: 'post', url: `${this.api}/conversation/:hex/pin`, handler: this.pin.bind(this) },
-			{ method: 'post', url: `${this.api}/conversation/:hex/unpin`, handler: this.unpin.bind(this) },
+			{ method: 'patch', url: `${this.api}/conversation/:hex/pin`, handler: this.pin.bind(this) },
+			{ method: 'patch', url: `${this.api}/conversation/:hex/unpin`, handler: this.unpin.bind(this) },
 			{ method: 'get', url: `${this.api}/conversations/stats`, handler: this.stats.bind(this) },
+			{ method: 'patch', url: `${this.api}/conversation/:hex/accept`, handler: this.accept.bind(this) }
 		];
 		
 		routes.forEach((route) => {
@@ -361,6 +362,38 @@ class ConversationService extends BaseService {
 		} catch (e) {
 			console.error('Error retrieving conversation statistics:', e);
 			return this.jsonResponse(res, 500, {error: 'Error retrieving conversation statistics', success: false});
+		}
+	}
+	
+	/*
+		@name accept
+		@description Accepts a conversation request
+		@type {method}
+		@async
+		@param {object} res uWebSockets.js response object
+		@param {object} req uWebSockets.js request object
+		@returns {Promise<object>} The accepted conversation
+	*/
+	accept = async ({ req, res }) => {
+		const { user: { hex } } = req;
+		const { hex: conversationHex } = req.getParameter(0);
+		
+		try {
+			// check if the conversation exists
+			const conversation = await Conversation.findOne({ hex: conversationHex, participants: { $in: [hex] }, kind: 'request' }).exec();
+			
+			if (!conversation) {
+				return this.jsonResponse(res, 404, { error: 'Conversation not found', success: false });
+			}
+			
+			// update the conversation to trusted
+			conversation.kind = 'trusted';
+			await conversation.save();
+			
+			return this.jsonResponse(res, 200, { conversation, success: true });
+		} catch (e) {
+			console.error('Error accepting conversation:', e);
+			return this.jsonResponse(res, 500, {error: 'Error accepting conversation', success: false});
 		}
 	}
 }

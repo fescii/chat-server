@@ -34,10 +34,10 @@ chat-server/
 │   ├── message.js            # Chat metadata model
 │   └── conversation.js         # Individual message model
 ├── chats/                  # Chat-related logic
-│   ├── chatController.js  # Controller for chat APIs
+│   ├── message.js  # Controller for chat APIs
 │   ├── chatService.js     # Core chat business logic
-│   ├── chatUtils.js       # Utility functions for chat operations
-│   └── chatRoutes.js      # API routes for chat
+│   ├── user.js       # Utility functions for chat operations
+│   └── conversation.js      # API routes for chat
 ├── queues/                 # Asynchronous job processing
 │   ├── bullmq/            # BullMQ-specific files
 │   │   ├── jobs/          # Job definitions

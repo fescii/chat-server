@@ -159,6 +159,13 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 				console.log(`WebSocket connected for conversation: ${hex}`);
 				// console.log('Participants:', participants);
 				ws.subscribe(`/chat/${hex}`);
+				
+				// send a message to the conversation
+				ws.publish(`/chat/${hex}`, JSON.stringify({
+					type: 'system',
+					message: 'A user joined the conversation',
+					createdAt: new Date()
+				}));
 			} catch (error) {
 				console.error('Open handler error:', error);
 			}
@@ -169,6 +176,10 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 				const { hex } = ws.conversation;
 				// convert a message from ArrayBuffer to string
 				message = Buffer.from(message).toString();
+				
+				// convert a message to JSON
+				message = JSON.parse(message);
+				
 				console.log(`Message for conversation ${hex}:`, message);
 				ws.publish(`/chat/${hex}`, message, isBinary);
 			} catch (error) {

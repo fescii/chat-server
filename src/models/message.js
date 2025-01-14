@@ -63,7 +63,6 @@ const messageSchema = new mongoose.Schema({
 		encrypted: { type: String, required: true },
 		nonce: { type: String, required: true }
 	},
-	timestamp: { type: Date, default: Date.now },
 	status: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' },
 	attachments: { type: [attachment], default: [] },
 	images: { type: [String], default: [] },
