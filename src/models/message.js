@@ -23,9 +23,27 @@ const attachment = new mongoose.Schema({
 	@field {String} to The reaction to
 */
 const reactions = new mongoose.Schema({
-	from: { type: String, required: true, enum: ['like', 'love', 'laugh', 'wow', 'sad', 'angry'] },
-	to: { type: String, required: true, enum: ['like', 'love', 'laugh', 'wow', 'sad', 'angry'] },
+	from: { type: String, enum: ['like', 'love', 'laugh', 'wow', 'sad', 'angry'] },
+	to: { type: String, enum: ['like', 'love', 'laugh', 'wow', 'sad', 'angry'] },
 })
+
+/*
+	@name reply  - A reply Schema
+	@description This schema represents a reply to a message
+	@type {mongoose.Schema}
+	@field {Object} recipientContent The content of the reply for the recipient
+	@field {Object} senderContent The content of the reply for the sender
+*/
+const reply = new mongoose.Schema({
+	recipientContent: {
+		encrypted: { type: String, required: true },
+		nonce: { type: String, required: true }
+	},
+	senderContent: {
+		encrypted: { type: String, required: true },
+		nonce: { type: String, required: true }
+	}
+});
 
 /*
 	@name Message Schema
@@ -52,6 +70,7 @@ const messageSchema = new mongoose.Schema({
 	kind: { type: String, enum: ['message', 'reply', 'forward'], default: 'message',},
 	type: { type: String, enum: ['all', 'audio'], default: 'all' },
 	parent: { type: String, ref: 'Message', default: null, },
+	reply: { type: reply, default: null },
 	user: { type: String, ref: 'User', required: true },
 	// Encrypted content for the recipient
 	recipientContent: {
@@ -77,6 +96,15 @@ const messageSchema = new mongoose.Schema({
 messageSchema.pre('save', function (next) {
 	this.updatedAt = Date.now();
 	next();
+});
+
+
+// Middleware to update conversation last message and `updatedAt` timestamp on modification
+messageSchema.post('save', async function (doc) {
+	await mongoose.model('Conversation').updateOne(
+		{ hex: doc.conversation },
+		{ $set: { last: doc._id, updatedAt: Date.now(), $inc: { total: 1 } } }
+	);
 });
 
 /*

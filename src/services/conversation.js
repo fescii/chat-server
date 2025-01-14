@@ -109,14 +109,28 @@ class ConversationService extends BaseService {
 		const { page = 1 } = req.query;
 		
 		try {
-			const conversations = await Conversation.find({
-				'participants.hex': { $in: [hex] }
-			}).sort({ updatedAt: -1 }).skip((page - 1) * perPage).limit(perPage).exec();
+			// Find all conversations where the user is a participant:
+			// include the last message using the conversation.last which is a reference to the message doc
+			const conversations = await Conversation.aggregate([
+				{ $match: { 'participants.hex': { $in: [hex] } } },
+				{ $sort: { updatedAt: -1 } },
+				{ $skip: (page - 1) * perPage },
+				{ $limit: perPage },
+				{
+					$lookup: {
+						from: 'messages',
+						localField: 'last',
+						foreignField: '_id',
+						as: 'last'
+					}
+				},
+				{ $unwind: '$last' }
+			]).exec();
 			
 			return this.jsonResponse(res, 200, { conversations, success: true });
 		} catch (e) {
 			console.error('Error retrieving all conversations:', e);
-			return this.jsonResponse(res, 500, {error: 'Error retrieving conversations', success: false});
+			return this.jsonResponse(res, 500, { error: 'Error retrieving conversations', success: false });
 		}
 	}
 	
@@ -133,10 +147,28 @@ class ConversationService extends BaseService {
 		const { page = 1 } = req.query;
 		
 		try {
-			const conversations = await Conversation.find({
-				'participants.hex': { $in: [hex] },
-				kind: 'request'
-			}).sort({ updatedAt: -1 }).skip((page - 1) * perPage).limit(perPage).exec();
+			// fetch all requested conversations where the user is a participant
+			// include the last message using the conversation.last which is a reference to the message doc
+			// const conversations = await Conversation.find({
+			// 	'participants.hex': { $in: [hex] },
+			// 	kind: 'request'
+			// }).sort({ updatedAt: -1 }).skip((page - 1) * perPage).limit(perPage).exec();
+			
+			const conversations = await Conversation.aggregate([
+				{ $match: { 'participants.hex': { $in: [hex] }, kind: 'request' } },
+				{ $sort: { updatedAt: -1 } },
+				{ $skip: (page - 1) * perPage },
+				{ $limit: perPage },
+				{
+					$lookup: {
+						from: 'messages',
+						localField: 'last',
+						foreignField: '_id',
+						as: 'last'
+					}
+				},
+				{ $unwind: '$last' }
+			]).exec();
 			
 			return this.jsonResponse(res, 200, { conversations, success: true });
 		} catch (e) {
@@ -159,10 +191,28 @@ class ConversationService extends BaseService {
 		const { page = 1 } = req.query;
 		
 		try {
-			const conversations = await Conversation.find({
-				'participants.hex': { $in: [hex] },
-				kind: 'trusted'
-			}).sort({ updatedAt: -1 }).skip((page - 1) * perPage).limit(perPage).exec();
+			// fetch all trusted conversations where the user is a participant
+			// include the last message using the conversation.last which is a reference to the message doc
+			// const conversations = await Conversation.find({
+			// 	'participants.hex': { $in: [hex] },
+			// 	kind: 'trusted'
+			// }).sort({ updatedAt: -1 }).skip((page - 1) * perPage).limit(perPage).exec();
+			
+			const conversations = await Conversation.aggregate([
+				{ $match: { 'participants.hex': { $in: [hex] }, kind: 'trusted' } },
+				{ $sort: { updatedAt: -1 } },
+				{ $skip: (page - 1) * perPage },
+				{ $limit: perPage },
+				{
+					$lookup: {
+						from: 'messages',
+						localField: 'last',
+						foreignField: '_id',
+						as: 'last'
+					}
+				},
+				{ $unwind: '$last' }
+			]).exec();
 			
 			return this.jsonResponse(res, 200, { conversations, success: true });
 		} catch (e) {
@@ -186,11 +236,29 @@ class ConversationService extends BaseService {
 		const { page = 1 } = req.query;
 		
 		try {
-			const conversations = await Conversation.find({
-				'participants.hex': { $in: [hex] },
-				kind: 'trusted',
-				unread: { $gt: 0 }
-			}).sort({ updatedAt: -1 }).skip((page - 1) * perPage).limit(perPage).exec();
+			// fetch all unread conversations where the user is a participant
+			// include the last message using the conversation.last which is a reference to the message doc
+			// const conversations = await Conversation.find({
+			// 	'participants.hex': { $in: [hex] },
+			// 	kind: 'trusted',
+			// 	unread: { $gt: 0 }
+			// }).sort({ updatedAt: -1 }).skip((page - 1) * perPage).limit(perPage).exec();
+			
+			const conversations = await Conversation.aggregate([
+				{ $match: { 'participants.hex': { $in: [hex] }, kind: 'trusted', unread: { $gt: 0 } } },
+				{ $sort: { updatedAt: -1 } },
+				{ $skip: (page - 1) * perPage },
+				{ $limit: perPage },
+				{
+					$lookup: {
+						from: 'messages',
+						localField: 'last',
+						foreignField: '_id',
+						as: 'last'
+					}
+				},
+				{ $unwind: '$last' }
+			]).exec();
 			
 			return this.jsonResponse(res, 200, { conversations, success: true });
 		} catch (e) {
@@ -217,9 +285,23 @@ class ConversationService extends BaseService {
 		
 		try {
 			// fetch conversation where both current and other are both participants (both hexes are in the participant array)
-			const conversation = await Conversation.findOne({
-				'participants.hex': { $all: [hex, other] }
-			}).exec();
+			// include the last message using the conversation.last which is a reference to the message doc
+			// const conversation = await Conversation.findOne({
+			// 	'participants.hex': { $all: [hex, other] }
+			// }).exec();
+			const [conversation] = await Conversation.aggregate([
+				{ $match: { 'participants.hex': { $all: [hex, other] } } },
+				{ $limit: 1 },
+				{
+					$lookup: {
+						from: 'messages',
+						localField: 'last',
+						foreignField: '_id',
+						as: 'last'
+					}
+				},
+				{ $unwind: '$last' }
+			]).exec();
 			
 			// if no such conversation exists
 			if (!conversation) {
@@ -246,9 +328,25 @@ class ConversationService extends BaseService {
 		const { user: { hex } } = req;
 		
 		try {
-			const conversations = await Conversation.find({
-				'pins.user': { $in: [hex] }
-			}).sort({ updatedAt: -1 }).exec();
+			//	find all conversations where the user has pinned the conversation,
+			// include the last message using the conversation.last which is a reference to the message doc
+			// const conversations = await Conversation.find({
+			// 	'pins.user': { $in: [hex] }
+			// }).sort({ updatedAt: -1 }).exec();
+			
+			const conversations = await Conversation.aggregate([
+				{ $match: { 'pins.user': { $in: [hex] } } },
+				{ $sort: { updatedAt: -1 } },
+				{
+					$lookup: {
+						from: 'messages',
+						localField: 'last',
+						foreignField: '_id',
+						as: 'last'
+					}
+				},
+				{ $unwind: '$last' }
+			]).exec();
 			
 			return this.jsonResponse(res, 200, { conversations, success: true });
 		} catch (e) {
@@ -266,7 +364,7 @@ class ConversationService extends BaseService {
 		@param {object} req uWebSockets.js request object
 		@returns {Promise<object>} The pinned conversation
 	*/
-	async pin({ req, res, body }) {
+	async pin({ req, res }) {
 		const { user: { hex } } = req;
 		const { hex: conversationHex } = req.getParameter(0);
 		

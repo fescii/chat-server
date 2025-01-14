@@ -77,6 +77,24 @@ const validate = (values, schema) => {
 			}
 		}
 		
+		// validate rule: content
+		if (rule.type === 'content') {
+			// the value should be an object
+			if (typeof values[key] !== 'object') {
+				throw new Error(`${key} should be an object`);
+			}
+			
+			// check if the object has the required properties
+			if (!values[key].encrypted || !values[key].nonce) {
+				throw new Error(`${key} should have encrypted and nonce properties`);
+			}
+			
+			// check if the encrypted and nonce properties are strings
+			if (typeof values[key].encrypted !== 'string' || typeof values[key].nonce !== 'string') {
+				throw new Error(`${key} encrypted and nonce should be strings`);
+			}
+		}
+		
 		if (rule.maxLength && values[key].length > rule.maxLength) {
 			throw new Error(`${key} should not be more than ${rule.maxLength} characters`);
 		}
