@@ -5,12 +5,12 @@ const uWs = require('uWebSockets.js');
 const path = require('path');
 require('dotenv').config();
 
-const { mongo, app: { host, port} } = require('./configs');
+const { mongo: { uri, options }, app: { host, port} } = require('./configs');
 const { authorize, checkConversation } = require("./middlewares").authMiddleware;
 const services = require('./services');
 
 // Connect to the MongoDB database
-mongoose.connect(mongo.uri, mongo.options).then(r => {
+mongoose.connect(uri, options).then(r => {
 	console.log('Connected to MongoDB');
 }).catch(e => {
 	console.error('Failed to connect to MongoDB:', e);
