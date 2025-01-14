@@ -17,27 +17,23 @@ ChatBloom is a real-time chat server designed to enable secure, scalable, and fe
 chat-server/
 ├── configs/                # Configuration files
 │   ├── data.js        # MongoDB connection configuration
-│   ├── websocket.js       # WebSocket server configuration
-│   ├── app.js      # Encryption-related configuration
-│   └── environment.js     # Environment variables loader
-├── data/                   # Database-related files
-│   ├── seed/              # Data seeding scripts
-│   ├── migrations/        # Database migrations
-│   └── schemas/           # MongoDB schemas
-├── auth/                   # Authentication modules
-│   ├── authMiddleware.js  # Middleware for JWT validation
-│   ├── jwtService.js      # Service to handle JWT operations
-│   ├── encryptionService.js # Encryption and decryption logic
-│   └── keyExchange.js     # Key exchange protocols
+│   ├── app.js      # App-related configuration
+│   └── index.js     # Environment variables loader
+├── controllers/            # Request handlers
+│   ├── conversation.js   # A conversation controller
+│   ├── message.js        # Message controller
+│   └── user.js           # User controller
+├── encryption/             # Encryption utilities
+│   ├── sodium.js       # Libsodium encryption
+│   └── index.js        # Exported encryption functions
+├── middlewares/            # Middleware functions
+│   ├── auth.js          # Authentication middleware
+│   ├── error.js         # Error handling middleware
+│   └── rate.js   # Rate-limiting middleware
 ├── models/                 # MongoDB models
 │   ├── user.js            # User model
 │   ├── message.js            # Chat metadata model
 │   └── conversation.js         # Individual message model
-├── chats/                  # Chat-related logic
-│   ├── message.js  # Controller for chat APIs
-│   ├── chatService.js     # Core chat business logic
-│   ├── user.js       # Utility functions for chat operations
-│   └── conversation.js      # API routes for chat
 ├── queues/                 # Asynchronous job processing
 │   ├── bullmq/            # BullMQ-specific files
 │   │   ├── jobs/          # Job definitions
@@ -48,22 +44,19 @@ chat-server/
 │   │   │   └── notificationProcessor.js
 │   └── broker/            # Message broker
 │       └── brokerService.js
-├── middlewares/            # Middleware functions
-│   ├── errorHandler.js    # Global error handling middleware
-│   ├── requestLogger.js   # Logs incoming requests
-│   └── rateLimiter.js     # Rate-limiting middleware
 ├── services/               # Core services
-│   ├── notificationService.js # Handles notifications
-│   ├── onlineStatusService.js # Tracks online/offline status
-│   ├── conversation.js  # Handles message-specific logic
-│   └── websocketService.js # Manages WebSocket connections
+│   ├── base.js            # Base service class
+│   ├── conversation.js    # Conversation service
+│   ├── message.js         # Message service
+│   └── user.js            # User service
+├── ssl/                    # SSL certificates
+│   ├── cert.pem           # Certificate file
+│   └── key.pem            # Private key file
 ├── utils/                  # Utility functions
 │   ├── logger.js          # Logging utility
 │   ├── validator.js       # Input validation
-│   ├── responseHelper.js  # Standardized API responses
-│   └── cryptoUtils.js     # Cryptographic helpers
-├── public/                 # Public-facing assets
-│   └── index.html         # Placeholder HTML file
+│   ├── toke.js           # JWT token generation and verification
+│   └── index.js           # Exported utility functions
 ├── tests/                  # Test files
 │   ├── authTests/         # Tests for authentication
 │   ├── chatTests/         # Tests for chat functionality
