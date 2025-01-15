@@ -99,9 +99,11 @@ class BaseService {
 	 * @param {object} data JSON data to send
 	 */
 	jsonResponse(res, status, data) {
-		res.writeStatus(`${status} ${this.getStatusText(status)}`)
-			.writeHeader('Content-Type', 'application/json')
-			.end(JSON.stringify(data));
+		res.cork(() => {
+			res.writeStatus(`${status} ${this.getStatusText(status)}`)
+				.writeHeader('Content-Type', 'application/json')
+				.end(JSON.stringify(data));
+		});
 	}
 	
 	/**

@@ -27,7 +27,7 @@ class UserService extends BaseService {
 			{ method: 'patch', url: `${this.api}/user/edit/avatar`, handler: this.updateAvatar.bind(this) },
 			{ method: 'patch', url: `${this.api}/user/edit/verification`, handler: this.updateVerification.bind(this) },
 			{ method: 'patch', url: `${this.api}/user/edit/name`, handler: this.updateName.bind(this) },
-			{ method: 'delete', url: `${this.api}/user/remove`, handler: this.delete.bind(this) }
+			{ method: 'del', url: `${this.api}/user/remove`, handler: this.delete.bind(this) }
 		];
 		
 		routes.forEach((route) => {

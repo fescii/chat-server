@@ -8,6 +8,7 @@ require('dotenv').config();
 const { mongo: { uri, options }, app: { host, port} } = require('./configs');
 const { authorize, checkConversation } = require("./middlewares").authMiddleware;
 const services = require('./services');
+const { MessageController } = require('./controllers');
 
 // Connect to the MongoDB database
 mongoose.connect(uri, options).then(r => {
@@ -20,6 +21,9 @@ const credentials = {
 	key_file_name: path.join(__dirname, './ssl', 'key.pem'),
 	cert_file_name: path.join(__dirname, './ssl', 'cert.pem')
 };
+
+// Active connections
+const activeConnections = new Map(); // Key: user hex, Value: WebSocket connection reference
 
 // Create the WebSocket server
 const app = uWs.SSLApp(credentials).ws('/events', {
@@ -59,7 +63,10 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 	
 	open: (ws, req) => {
 		console.log('A WebSocket connected');
-		ws.subscribe('/events');
+		
+		// add to active connections
+		activeConnections.set(ws.user.hex, ws);
+		ws.subscribe('/chats');
 	},
 		
 	message: async (ws, message, isBinary) => {
@@ -72,6 +79,9 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 		
 	close: (ws, code, message) => {
 		console.log('A WebSocket closed with code:', code, 'and message:', message);
+		
+		// Remove from active connections
+		activeConnections.delete(ws.user.hex);
 	},
 	
 	// error: (ws, error) => {
@@ -180,8 +190,8 @@ const app = uWs.SSLApp(credentials).ws('/events', {
 				// convert a message to JSON
 				message = JSON.parse(message);
 				
-				console.log(`Message for conversation ${hex}:`, message);
-				ws.publish(`/chat/${hex}`, message, isBinary);
+				// process the message via MessageController
+				new MessageController(app, ws, message, isBinary);
 			} catch (error) {
 				console.error('Message handling error:', error);
 			}

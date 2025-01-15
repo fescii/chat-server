@@ -2,15 +2,17 @@ const { Message } = require('../models');
 const { MessageValidators: {
 	validateMessage, validateContent, validateReply
 } } = require('../validators');
+const { bull: { socketQueue } } = require('../queues');
 
 class MessageController {
-	constructor(ws, message, isBinary) {
+	constructor(app, ws, data, isBinary) {
+		this.app = app;
 		this.ws = ws;
 		this.conversation = ws.conversation.hex;
-		this.sender = message.user;
 		// get participants
 		this.participants = ws.conversation.participants;
 		this.isBinary = isBinary;
+		this.process(data);
 	}
 	
 	/*
@@ -22,35 +24,41 @@ class MessageController {
 	*/
 	process = data => {
 		const { kind, message } = data;
-		switch (kind) {
-			case 'new':
-				this.save(message);
-				break;
-			case 'update':
-				this.edit(message);
-				break;
-			case 'reaction':
-				this.react(message);
-				break;
-			case 'status':
-				this.delivered(message);
-				break;
-			case 'remove':
-				this.delete(message);
-				break;
-			case 'update':
-				this.edit(message);
-				break;
-			case 'reply':
-				this.reply(message);
-				break;
-			case 'forward':
-				this.forward(message);
-				break;
-			default:
-				console.error('Invalid message kind:', kind);
-				break;
+		const actions = {
+			new: this.save,
+			update: this.edit,
+			reaction: this.react,
+			status: this.delivered,
+			remove: this.delete,
+			reply: this.reply,
+			forward: () => console.error('Forward feature not implemented')
+		};
+		
+		const action = actions[kind];
+		if (action) {
+			action.call(this, message).then(() => console.log('Action executed'));
+		} else {
+			console.error('Invalid message kind:', kind);
 		}
+	}
+	
+	/*
+		@name worker
+		@descripton Add a message to socketQueue
+		@type {method}
+		@param {String} user hex: The user hex to send the message to
+		@param {object} message The message object
+		@returns {Promise<void>} The promise object
+	*/
+	worker = async (user, message) => {
+		// contruct data:
+		const data = {
+			to: user,
+			kind: 'worker',
+			data: message
+		}
+		// Send the message to the desired user
+		await socketQueue.add('socketQueue', data , { attempts: 3, backoff: 1000, removeOnComplete: true });
 	}
 	
 	/*
@@ -98,7 +106,7 @@ class MessageController {
 		@param {object} message The message object
 		@returns {uWebSockets.js.Response} The publishes message
 	*/
-	async save(message) {
+	save = async message => {
 		// Validate the message
 		if (!this.validate(message)) {
 			throw new Error('Invalid message format');
@@ -211,7 +219,7 @@ class MessageController {
 		@type {method}
 		@param {object} message The message object
 	*/
-	publish(message) {
+	publish = message => {
 		// Save the message
 		if (!message) {
 			return;
@@ -488,3 +496,6 @@ class MessageController {
 		}
 	}
 }
+
+// export the class
+module.exports = MessageController;
