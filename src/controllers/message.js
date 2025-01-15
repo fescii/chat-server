@@ -11,6 +11,7 @@ class MessageController {
 		this.conversation = ws.conversation.hex;
 		// get participants
 		this.participants = ws.conversation.participants;
+		this.users = this.participants.map(participant => participant.user);
 		this.isBinary = isBinary;
 		this.process(data);
 	}
@@ -44,17 +45,18 @@ class MessageController {
 	
 	/*
 		@name worker
-		@descripton Add a message to socketQueue
+		@description Add a message to socketQueue
 		@type {method}
 		@param {String} user hex: The user hex to send the message to
 		@param {object} message The message object
 		@returns {Promise<void>} The promise object
 	*/
-	worker = async (user, message) => {
-		// contruct data:
+	worker = async (conversation, message) => {
+		// contract data:
 		const data = {
-			to: user,
+			to: this.users,
 			kind: 'worker',
+			conversation,
 			data: message
 		}
 		// Send the message to the desired user
@@ -130,9 +132,8 @@ class MessageController {
 				createdAt: new Date()
 			});
 			
-			// Save the message
 			await savedMessage.save();
-			
+
 			const data = {
 				message: savedMessage.toObject(),
 				kind: 'new'
@@ -140,6 +141,9 @@ class MessageController {
 			
 			// publish the message
 			this.publish(data);
+			
+			// send the message to the desired user
+			await this.worker(savedMessage["conversation"], data);
 		} catch (e) {
 			console.error('Error saving message:', e);
 			
@@ -205,6 +209,9 @@ class MessageController {
 			
 			// publish the message
 			this.publish(data);
+			
+			// send the message to the desired user
+			await this.worker(savedMessage["conversation"], data);
 		} catch (e) {
 			console.error('Error replying to message:', e);
 			
@@ -285,6 +292,9 @@ class MessageController {
 			
 			// publish the message
 			this.publish(data);
+			
+			// send the message to the desired user
+			await this.worker(message.conversation, data);
 		} catch (e) {
 			console.error('Error delivering message:', e);
 			
@@ -331,6 +341,9 @@ class MessageController {
 			
 			// publish the message
 			this.publish(data);
+			
+			// send the message to the desired user
+			await this.worker(message.conversation, data);
 		} catch (e) {
 			console.error('Error reading message:', e);
 			// send an error message
@@ -391,6 +404,9 @@ class MessageController {
 			
 			// publish the message
 			this.publish(data);
+			
+			// send the message to the desired user
+			await this.worker(message.conversation, data);
 		} catch (e) {
 			console.error('Error reacting to message:', e);
 			// send an error message
@@ -442,6 +458,9 @@ class MessageController {
 			
 			// publish the message
 			this.publish(data);
+			
+			// send the message to the desired user
+			await this.worker(message.conversation, data);
 		} catch (e) {
 			console.error('Error editing message:', e);
 			// send an error message
@@ -484,6 +503,9 @@ class MessageController {
 				
 				// publish the message
 				this.publish(data);
+				
+				// Send the message to the desired user
+				await this.worker(message.conversation, data);
 			} else {
 				// send an error message
 				this.send({ kind: 'error', message: { id: id, error: 'Unauthorized to delete message' } });

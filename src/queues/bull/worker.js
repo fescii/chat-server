@@ -44,20 +44,26 @@ class SocketWorker {
 		@type {method}
 		@param {object} message The message object
 	*/
-	send = data => {
+	send = (data) => {
 		// Check if data has been received from a socket
-		if (!data || !data.to) return;
+		if (!data || !data.to) {
+			console.warn('No data or recipient specified');
+			return;
+		}
 		
-		const ws = this.connections.get(data.to);
-		if (ws) {
+		const [user1, user2] = data.to.map(user => this.connections.get(user));
+		
+		if (user1 && user2) {
 			try {
-				ws.send(JSON.stringify(data));
-				console.log(`Message sent to user ${data.to}:`, data);
+				const message = JSON.stringify(data);
+				user1.send(message);
+				user2.send(message);
+				console.log(`Message sent to users ${data.to}:`, data);
 			} catch (error) {
-				console.error(`Failed to send message to user ${data}:`, error);
+				console.error(`Failed to send message to users ${data.to}:`, error);
 			}
 		} else {
-			console.warn(`No active connection found for user ${data}`);
+			console.warn(`No active connection found for users ${data.to}`);
 		}
 	}
 }
