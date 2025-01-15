@@ -1,4 +1,4 @@
-****# ChatBloom Real-Time Chat Server
+# ChatBloom Real-Time Chat Server
 
 ## Overview
 ChatBloom is a real-time chat server designed to enable secure, scalable, and feature-rich communication. Built with **uWebSockets.js** and **MongoDB**, this server facilitates end-to-end encrypted messaging, real-time updates, and seamless integration with WebSocket technology.
